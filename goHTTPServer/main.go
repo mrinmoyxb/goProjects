@@ -149,7 +149,41 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 // PUT
 func putTaskHandler(w http.ResponseWriter, r *http.Request) {
+	taskIDStr := chi.URLParam(r, "id");
+	taskID, err := strconv.Atoi(taskIDStr)
+	if err != nil {
+		http.Error(w, "invalid taskID format", http.StatusBadRequest)
+		return
+	}
 
+	var res Task
+	if err := json.NewDecoder(r.Body).Decode(&res); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	found := false
+	for index := range tasks {
+		if tasks[index].ID == taskID {
+			found = true
+			tasks[index] = res
+			tasks[index].ID = taskID
+			break
+		}
+	}
+
+	if !found {
+		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+
+	response := TaskResponse{
+		Message: "success",
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
 
 func main() {
